@@ -1,22 +1,55 @@
 .allergen-display {
     display: flex;
     flex-wrap: wrap;
-    gap: 15px;
+    gap: 2px;
     margin: 10px 0;
 }
 
 .allergen-item {
     text-align: center;
     width: 60px;
+    position: relative; /* necesario para el posicionamiento absoluto del tooltip */
 }
 
 .allergen-item img {
     max-width: 32px;
     margin: 0 auto;
     display: block;
+    cursor: pointer;
 }
 
-.allergen-item p {
-    margin: 4px 0 0 0;
-    font-size: 0.85em;
+.allergen-tooltip {
+    visibility: hidden;
+    opacity: 0;
+    width: max-content;
+    max-width: 150px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    text-align: center;
+    border-radius: 5px;
+    padding: 5px 8px;
+    position: absolute;
+    z-index: 10;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: opacity 0.3s;
+    font-size: 0.75em;
+}
+
+.allergen-item:hover .allergen-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Opcional: Añade una pequeña flecha al tooltip */
+.allergen-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
 }

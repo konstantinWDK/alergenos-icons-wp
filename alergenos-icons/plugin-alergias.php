@@ -29,13 +29,13 @@ class Woo_Allergen_Selector {
             'lacteos'         => array( 'label' => 'Lácteos',                       'img' => 'alg-lacteos.png' ),
             'cacahuetes'      => array( 'label' => 'Cacahuetes',                    'img' => 'alg-cacahuetes.png' ),
             'frutos_cascara'  => array( 'label' => 'Frutos de cáscara',             'img' => 'alg-frutos-cascara.png' ),
-            'apio'            => array( 'label' => 'Apio',                        'img' => 'alg-apio.png' ),
-            'mostaza'         => array( 'label' => 'Mostaza',                     'img' => 'alg-mostaza.png' ),
-            'sesamo'          => array( 'label' => 'Granos de sésamo',            'img' => 'alg-sesamo.png' ),
-            'crustaceos'      => array( 'label' => 'Crustáceos',                  'img' => 'alg-crustaceos.png' ),
-            'azufre_sulfitos' => array( 'label' => 'Dióxido de azufre y sulfitos','img' => 'alg-azufre-sulfitos.png' ),
-            'altramuces'      => array( 'label' => 'Altramuces',                  'img' => 'alg-altramuces.png' ),
-            'moluscos'        => array( 'label' => 'Moluscos',                   'img' => 'alg-moluscos.png' ),
+            'apio'            => array( 'label' => 'Apio',                          'img' => 'alg-apio.png' ),
+            'mostaza'         => array( 'label' => 'Mostaza',                       'img' => 'alg-mostaza.png' ),
+            'sesamo'          => array( 'label' => 'Granos de sésamo',              'img' => 'alg-sesamo.png' ),
+            'crustaceos'      => array( 'label' => 'Crustáceos',                    'img' => 'alg-crustaceos.png' ),
+            'azufre_sulfitos' => array( 'label' => 'Dióxido de azufre y sulfitos',  'img' => 'alg-azufre-sulfitos.png' ),
+            'altramuces'      => array( 'label' => 'Altramuces',                    'img' => 'alg-altramuces.png' ),
+            'moluscos'        => array( 'label' => 'Moluscos',                      'img' => 'alg-moluscos.png' ),
         );
 
         // Agrega el metabox al editar productos (WooCommerce).
@@ -130,7 +130,6 @@ class Woo_Allergen_Selector {
                 return;
             }
         }
-
         $selected_allergens = isset( $_POST['selected_allergens'] ) ? array_map( 'sanitize_text_field', $_POST['selected_allergens'] ) : array();
         update_post_meta( $post_id, '_selected_allergens', $selected_allergens );
     }
@@ -141,8 +140,14 @@ class Woo_Allergen_Selector {
      */
     public function display_allergens_shortcode( $atts ) {
         global $post;
-        if ( ! $post ) {
-            return '';
+        // Primero intentamos obtener el objeto global.
+        if ( ! $post || 'product' !== get_post_type( $post ) ) {
+            // Si no es un producto, usamos el objeto de la consulta actual.
+            $post = get_queried_object();
+        }
+        // Verificamos nuevamente que el objeto sea un producto.
+        if ( ! $post || 'product' !== get_post_type( $post ) ) {
+            return '<p>No hay alérgenos seleccionados para este producto.</p>';
         }
         
         $selected_allergens = get_post_meta( $post->ID, '_selected_allergens', true );
@@ -155,9 +160,10 @@ class Woo_Allergen_Selector {
             if ( isset( $this->allergens[ $allergen_key ] ) ) {
                 $data    = $this->allergens[ $allergen_key ];
                 $img_src = plugin_dir_url( __FILE__ ) . 'img/' . $data['img'];
+                // Sustitución de la etiqueta <p> por un tooltip en span
                 $output .= '<div class="allergen-item">';
                     $output .= '<img src="' . esc_url( $img_src ) . '" alt="' . esc_attr( $data['label'] ) . '" width="32" height="32" />';
-                    $output .= '<p>' . esc_html( $data['label'] ) . '</p>';
+                    $output .= '<span class="allergen-tooltip">' . esc_html( $data['label'] ) . '</span>';
                 $output .= '</div>';
             }
         }
