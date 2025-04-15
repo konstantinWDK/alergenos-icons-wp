@@ -2,12 +2,12 @@
     display: flex;
     flex-wrap: wrap;
     gap: 2px;
-    margin: 10px 0;
+    margin: 5px 0;
 }
 
 .allergen-item {
     text-align: center;
-    width: 60px;
+    width: 35px;
     position: relative; /* necesario para el posicionamiento absoluto del tooltip */
 }
 

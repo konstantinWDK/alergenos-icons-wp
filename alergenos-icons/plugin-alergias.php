@@ -162,7 +162,7 @@ class Woo_Allergen_Selector {
                 $img_src = plugin_dir_url( __FILE__ ) . 'img/' . $data['img'];
                 // Sustitución de la etiqueta <p> por un tooltip en span
                 $output .= '<div class="allergen-item">';
-                    $output .= '<img src="' . esc_url( $img_src ) . '" alt="' . esc_attr( $data['label'] ) . '" width="32" height="32" />';
+                    $output .= '<img src="' . esc_url( $img_src ) . '" alt="' . esc_attr( $data['label'] ) . '" width="26" height="26" />';
                     $output .= '<span class="allergen-tooltip">' . esc_html( $data['label'] ) . '</span>';
                 $output .= '</div>';
             }
