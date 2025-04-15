@@ -3,7 +3,7 @@
 Plugin Name: Alergenos Icons
 Description: Permite seleccionar alérgenos en los productos de WooCommerce y mostrarlos en el front-end mediante un shortcode. Los iconos se gestionan internamente y se cargan desde la carpeta de imágenes del plugin.
 Version: 1.0
-Author: Konstantin WDK
+Author: Konstantin WDK -
 Author URI: https://webdesignerk.com
 Text Domain: alergenos-icons
 */
