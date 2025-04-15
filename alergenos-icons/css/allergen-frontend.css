@@ -1,0 +1,22 @@
+.allergen-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin: 10px 0;
+}
+
+.allergen-item {
+    text-align: center;
+    width: 60px;
+}
+
+.allergen-item img {
+    max-width: 32px;
+    margin: 0 auto;
+    display: block;
+}
+
+.allergen-item p {
+    margin: 4px 0 0 0;
+    font-size: 0.85em;
+}
