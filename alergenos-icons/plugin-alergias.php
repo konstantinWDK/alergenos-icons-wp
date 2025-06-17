@@ -2,7 +2,7 @@
 /*
 Plugin Name: Alergenos Icons
 Description: Permite seleccionar alérgenos en los productos de WooCommerce y mostrarlos en el front-end mediante un shortcode. Los iconos se gestionan internamente y se cargan desde la carpeta de imágenes del plugin.
-Version: 1.0
+Version: 1.3
 Author: Konstantin WDK -
 Author URI: https://webdesignerk.com
 Text Domain: alergenos-icons
@@ -84,9 +84,17 @@ class Woo_Allergen_Selector {
      */
     public function add_allergen_meta_box() {
         add_meta_box(
-            'allergen_meta_box',
-            'Seleccionar Alérgenos',
-            array( $this, 'render_allergen_meta_box' ),
+            'allergen_meta_box_ingredients',
+            'Seleccionar Alérgenos (Ingredientes)',
+            array( $this, 'render_allergen_meta_box_ingredients' ),
+            'product',
+            'side',
+            'default'
+        );
+        add_meta_box(
+            'allergen_meta_box_traces',
+            'Seleccionar Alérgenos (Trazas)',
+            array( $this, 'render_allergen_meta_box_traces' ),
             'product',
             'side',
             'default'
@@ -94,20 +102,44 @@ class Woo_Allergen_Selector {
     }
 
     /**
-     * Renderiza la interfaz del metabox para la selección de alérgenos.
+     * Renderiza la interfaz del metabox para la selección de alérgenos (Ingredientes).
      */
-    public function render_allergen_meta_box( $post ) {
+    public function render_allergen_meta_box_ingredients( $post ) {
         wp_nonce_field( 'save_allergens', 'allergen_nonce' );
-        $selected_allergens = get_post_meta( $post->ID, '_selected_allergens', true );
-        if ( ! is_array( $selected_allergens ) ) {
-            $selected_allergens = array();
+        $selected_allergens_ingredients = get_post_meta( $post->ID, '_selected_allergens_ingredients', true );
+        if ( ! is_array( $selected_allergens_ingredients ) ) {
+            $selected_allergens_ingredients = array();
         }
 
         echo '<div class="allergen-selector">';
+        echo '<p><strong>Ingredientes:</strong></p>';
         foreach ( $this->allergens as $key => $data ) {
-            $checked = in_array( $key, $selected_allergens ) ? 'checked' : '';
+            $checked = in_array( $key, $selected_allergens_ingredients ) ? 'checked' : '';
             echo '<label class="allergen-label">';
-                echo '<input type="checkbox" name="selected_allergens[]" value="' . esc_attr( $key ) . '" ' . $checked . ' />';
+                echo '<input type="checkbox" name="selected_allergens_ingredients[]" value="' . esc_attr( $key ) . '" ' . $checked . ' />';
+                echo '<img src="' . esc_url( plugin_dir_url( __FILE__ ) . 'img/' . $data['img'] ) . '" alt="' . esc_attr( $data['label'] ) . '" width="24" height="24" />';
+                echo '<span>' . esc_html( $data['label'] ) . '</span>';
+            echo '</label>';
+        }
+        echo '</div>';
+    }
+
+    /**
+     * Renderiza la interfaz del metabox para la selección de alérgenos (Trazas).
+     */
+    public function render_allergen_meta_box_traces( $post ) {
+        wp_nonce_field( 'save_allergens', 'allergen_nonce' );
+        $selected_allergens_traces = get_post_meta( $post->ID, '_selected_allergens_traces', true );
+        if ( ! is_array( $selected_allergens_traces ) ) {
+            $selected_allergens_traces = array();
+        }
+
+        echo '<div class="allergen-selector">';
+        echo '<p><strong>Trazas:</strong></p>';
+        foreach ( $this->allergens as $key => $data ) {
+            $checked = in_array( $key, $selected_allergens_traces ) ? 'checked' : '';
+            echo '<label class="allergen-label">';
+                echo '<input type="checkbox" name="selected_allergens_traces[]" value="' . esc_attr( $key ) . '" ' . $checked . ' />';
                 echo '<img src="' . esc_url( plugin_dir_url( __FILE__ ) . 'img/' . $data['img'] ) . '" alt="' . esc_attr( $data['label'] ) . '" width="24" height="24" />';
                 echo '<span>' . esc_html( $data['label'] ) . '</span>';
             echo '</label>';
@@ -131,7 +163,8 @@ class Woo_Allergen_Selector {
             }
         }
         $selected_allergens = isset( $_POST['selected_allergens'] ) ? array_map( 'sanitize_text_field', $_POST['selected_allergens'] ) : array();
-        update_post_meta( $post_id, '_selected_allergens', $selected_allergens );
+        update_post_meta( $post_id, '_selected_allergens_ingredients', isset( $_POST['selected_allergens_ingredients'] ) ? array_map( 'sanitize_text_field', $_POST['selected_allergens_ingredients'] ) : array() );
+        update_post_meta( $post_id, '_selected_allergens_traces', isset( $_POST['selected_allergens_traces'] ) ? array_map( 'sanitize_text_field', $_POST['selected_allergens_traces'] ) : array() );
     }
 
     /**
@@ -140,33 +173,57 @@ class Woo_Allergen_Selector {
      */
     public function display_allergens_shortcode( $atts ) {
         global $post;
-        // Primero intentamos obtener el objeto global.
-        if ( ! $post || 'product' !== get_post_type( $post ) ) {
-            // Si no es un producto, usamos el objeto de la consulta actual.
-            $post = get_queried_object();
-        }
-        // Verificamos nuevamente que el objeto sea un producto.
-        if ( ! $post || 'product' !== get_post_type( $post ) ) {
-            return '<p>No hay alérgenos seleccionados para este producto.</p>';
-        }
+
+		// Check if $post is already populated and is a product
+		if ( ! $post || 'product' !== get_post_type( $post ) ) {
+			// If not, try to get the current queried object
+			$post = get_queried_object();
+		}
+
+		// Double check if we now have a product
+		if ( ! $post || 'product' !== get_post_type( $post ) ) {
+			return '<p>No hay alérgenos seleccionados para este producto.</p>';
+		}
         
-        $selected_allergens = get_post_meta( $post->ID, '_selected_allergens', true );
-        if ( empty( $selected_allergens ) || ! is_array( $selected_allergens ) ) {
-            return '<p>No hay alérgenos seleccionados para este producto.</p>';
-        }
+        $selected_allergens_ingredients = get_post_meta( $post->ID, '_selected_allergens_ingredients', true );
+        $selected_allergens_traces = get_post_meta( $post->ID, '_selected_allergens_traces', true );
 
         $output = '<div class="allergen-display">';
-        foreach ( $selected_allergens as $allergen_key ) {
-            if ( isset( $this->allergens[ $allergen_key ] ) ) {
-                $data    = $this->allergens[ $allergen_key ];
-                $img_src = plugin_dir_url( __FILE__ ) . 'img/' . $data['img'];
-                // Sustitución de la etiqueta <p> por un tooltip en span
-                $output .= '<div class="allergen-item">';
-                    $output .= '<img src="' . esc_url( $img_src ) . '" alt="' . esc_attr( $data['label'] ) . '"  />';
-                    $output .= '<span class="allergen-tooltip">' . esc_html( $data['label'] ) . '</span>';
-                $output .= '</div>';
+
+        // Mostrar ingredientes
+        if ( ! empty( $selected_allergens_ingredients ) && is_array( $selected_allergens_ingredients ) ) {
+            $output .= '<h4>Ingredientes:</h4>';
+            $output .= '<div class="allergen-ingredients">';
+            foreach ( $selected_allergens_ingredients as $allergen_key ) {
+                if ( isset( $this->allergens[ $allergen_key ] ) ) {
+                    $data    = $this->allergens[ $allergen_key ];
+                    $img_src = plugin_dir_url( __FILE__ ) . 'img/' . $data['img'];
+                    $output .= '<div class="allergen-item">';
+                        $output .= '<img src="' . esc_url( $img_src ) . '" alt="' . esc_attr( $data['label'] ) . '"  />';
+                        $output .= '<span class="allergen-tooltip">' . esc_html( $data['label'] ) . '</span>';
+                    $output .= '</div>';
+                }
             }
+            $output .= '</div>';
         }
+
+        // Mostrar trazas
+        if ( ! empty( $selected_allergens_traces ) && is_array( $selected_allergens_traces ) ) {
+            $output .= '<h4>Trazas:</h4>';
+            $output .= '<div class="allergen-traces">';
+            foreach ( $selected_allergens_traces as $allergen_key ) {
+                if ( isset( $this->allergens[ $allergen_key ] ) ) {
+                    $data    = $this->allergens[ $allergen_key ];
+                    $img_src = plugin_dir_url( __FILE__ ) . 'img/' . $data['img'];
+                    $output .= '<div class="allergen-item">';
+                        $output .= '<img class="allergen-trace-icon" src="' . esc_url( $img_src ) . '" alt="' . esc_attr( $data['label'] ) . '"  />';
+                        $output .= '<span class="allergen-tooltip">' . esc_html( $data['label'] ) . '</span>';
+                    $output .= '</div>';
+                }
+            }
+            $output .= '</div>';
+        }
+
         $output .= '</div>';
         return $output;
     }
