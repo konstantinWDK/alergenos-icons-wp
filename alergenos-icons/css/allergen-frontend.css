@@ -1,10 +1,17 @@
-.allergen-display {
+.allergen-container {
     margin: 5px 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.allergen-section {
+ 
+    display: block;
 }
 
 .allergen-ingredients,
 .allergen-traces {
-    margin-bottom: 10px;
+  
     display: block;
 }
 
@@ -12,8 +19,16 @@
     text-align: left;
     width: auto;
     position: relative; /* necesario para el posicionamiento absoluto del tooltip */
-    margin: 5px 0;
+    margin: 10px 0px 0px 0px;
     display: inline-block;
+}
+
+.allergen-image {
+    max-width: 32px;
+    max-height: 32px;
+    margin-right: 5px;
+    display: inline-block;
+    cursor: pointer;
 }
 
 .allergen-item img {
@@ -22,6 +37,10 @@
     margin-right: 5px;
     display: inline-block;
     cursor: pointer;
+}
+
+.allergen-text {
+    font-size: 0.75em;
 }
 
 .allergen-tooltip {
@@ -62,4 +81,15 @@
 
 .allergen-trace-icon {
     filter: grayscale(100%);
+}
+
+
+.allergen-texto-adicional {
+
+        margin-bottom: 20px;
+    font-weight: 700;
+    font-size: 12px;
+        padding-left: 5px;
+            line-height: 14px;
+    
 }

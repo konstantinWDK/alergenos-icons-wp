@@ -2,7 +2,7 @@
 /*
 Plugin Name: Alergenos Icons
 Description: Permite seleccionar alérgenos en los productos de WooCommerce y mostrarlos en el front-end mediante un shortcode. Los iconos se gestionan internamente y se cargan desde la carpeta de imágenes del plugin.
-Version: 1.3
+Version: 1.1
 Author: Konstantin WDK -
 Author URI: https://webdesignerk.com
 Text Domain: alergenos-icons
@@ -14,13 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Woo_Allergen_Selector {
 
-    /**
-     * Array con la definición de alérgenos y sus imágenes.
-     */
     private $allergens;
 
     public function __construct() {
-        // Definir alérgenos: clave interna => label y nombre de la imagen.
         $this->allergens = array(
             'gluten'          => array( 'label' => 'Cereales con gluten',          'img' => 'alg-gluten.png' ),
             'huevos'          => array( 'label' => 'Huevos',                        'img' => 'alg-huevos.png' ),
@@ -38,22 +34,15 @@ class Woo_Allergen_Selector {
             'moluscos'        => array( 'label' => 'Moluscos',                      'img' => 'alg-moluscos.png' ),
         );
 
-        // Agrega el metabox al editar productos (WooCommerce).
         add_action( 'add_meta_boxes', array( $this, 'add_allergen_meta_box' ) );
-        // Guarda la selección de alérgenos.
         add_action( 'save_post', array( $this, 'save_allergen_meta_box' ) );
-        
-        // Shortcode para mostrar alérgenos: [mostrar_alergenos]
+
         add_shortcode( 'mostrar_alergenos', array( $this, 'display_allergens_shortcode' ) );
 
-        // Encolar estilos para el área de administración y frontend.
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_styles' ) );
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_styles' ) );
     }
 
-    /**
-     * Encola los estilos para la administración (metabox de alérgenos).
-     */
     public function enqueue_admin_styles( $hook ) {
         global $post;
         if ( ( 'post.php' !== $hook && 'post-new.php' !== $hook ) || ( isset( $post ) && 'product' !== $post->post_type ) ) {
@@ -67,9 +56,6 @@ class Woo_Allergen_Selector {
         );
     }
 
-    /**
-     * Encola los estilos para el frontend (muestra los iconos de alérgenos).
-     */
     public function enqueue_frontend_styles() {
         wp_enqueue_style(
             'allergen-frontend-style',
@@ -79,9 +65,6 @@ class Woo_Allergen_Selector {
         );
     }
 
-    /**
-     * Agrega el metabox en la edición del producto.
-     */
     public function add_allergen_meta_box() {
         add_meta_box(
             'allergen_meta_box_ingredients',
@@ -101,15 +84,16 @@ class Woo_Allergen_Selector {
         );
     }
 
-    /**
-     * Renderiza la interfaz del metabox para la selección de alérgenos (Ingredientes).
-     */
     public function render_allergen_meta_box_ingredients( $post ) {
         wp_nonce_field( 'save_allergens', 'allergen_nonce' );
+
         $selected_allergens_ingredients = get_post_meta( $post->ID, '_selected_allergens_ingredients', true );
         if ( ! is_array( $selected_allergens_ingredients ) ) {
             $selected_allergens_ingredients = array();
         }
+
+        // NUEVO: Campo texto ingredientes
+        $text_ingredients = get_post_meta( $post->ID, '_allergens_text_ingredients', true );
 
         echo '<div class="allergen-selector">';
         echo '<p><strong>Ingredientes:</strong></p>';
@@ -122,17 +106,21 @@ class Woo_Allergen_Selector {
             echo '</label>';
         }
         echo '</div>';
+
+        echo '<p><label for="allergens_text_ingredients"><strong>Texto adicional (Ingredientes):</strong></label></p>';
+        echo '<textarea style="width:100%;" rows="3" id="allergens_text_ingredients" name="allergens_text_ingredients">' . esc_textarea( $text_ingredients ) . '</textarea>';
     }
 
-    /**
-     * Renderiza la interfaz del metabox para la selección de alérgenos (Trazas).
-     */
     public function render_allergen_meta_box_traces( $post ) {
         wp_nonce_field( 'save_allergens', 'allergen_nonce' );
+
         $selected_allergens_traces = get_post_meta( $post->ID, '_selected_allergens_traces', true );
         if ( ! is_array( $selected_allergens_traces ) ) {
             $selected_allergens_traces = array();
         }
+
+        // NUEVO: Campo texto trazas
+        $text_traces = get_post_meta( $post->ID, '_allergens_text_traces', true );
 
         echo '<div class="allergen-selector">';
         echo '<p><strong>Trazas:</strong></p>';
@@ -145,11 +133,11 @@ class Woo_Allergen_Selector {
             echo '</label>';
         }
         echo '</div>';
+
+        echo '<p><label for="allergens_text_traces"><strong>Texto adicional (Trazas):</strong></label></p>';
+        echo '<textarea style="width:100%;" rows="3" id="allergens_text_traces" name="allergens_text_traces">' . esc_textarea( $text_traces ) . '</textarea>';
     }
 
-    /**
-     * Guarda la selección de alérgenos al guardar el producto.
-     */
     public function save_allergen_meta_box( $post_id ) {
         if ( ! isset( $_POST['allergen_nonce'] ) || ! wp_verify_nonce( $_POST['allergen_nonce'], 'save_allergens' ) ) {
             return;
@@ -162,72 +150,85 @@ class Woo_Allergen_Selector {
                 return;
             }
         }
-        $selected_allergens = isset( $_POST['selected_allergens'] ) ? array_map( 'sanitize_text_field', $_POST['selected_allergens'] ) : array();
+
         update_post_meta( $post_id, '_selected_allergens_ingredients', isset( $_POST['selected_allergens_ingredients'] ) ? array_map( 'sanitize_text_field', $_POST['selected_allergens_ingredients'] ) : array() );
         update_post_meta( $post_id, '_selected_allergens_traces', isset( $_POST['selected_allergens_traces'] ) ? array_map( 'sanitize_text_field', $_POST['selected_allergens_traces'] ) : array() );
+
+        // Guardar los textos adicionales
+        if ( isset( $_POST['allergens_text_ingredients'] ) ) {
+            update_post_meta( $post_id, '_allergens_text_ingredients', sanitize_textarea_field( $_POST['allergens_text_ingredients'] ) );
+        }
+        if ( isset( $_POST['allergens_text_traces'] ) ) {
+            update_post_meta( $post_id, '_allergens_text_traces', sanitize_textarea_field( $_POST['allergens_text_traces'] ) );
+        }
     }
 
-    /**
-     * Shortcode para mostrar en el frontend los alérgenos seleccionados.
-     * Uso: [mostrar_alergenos]
-     */
     public function display_allergens_shortcode( $atts ) {
         global $post;
 
-		// Check if $post is already populated and is a product
-		if ( ! $post || 'product' !== get_post_type( $post ) ) {
-			// If not, try to get the current queried object
-			$post = get_queried_object();
-		}
+        if ( ! $post || 'product' !== get_post_type( $post ) ) {
+            $post = get_queried_object();
+        }
 
-		// Double check if we now have a product
-		if ( ! $post || 'product' !== get_post_type( $post ) ) {
-			return '<p>No hay alérgenos seleccionados para este producto.</p>';
-		}
-        
+        if ( ! $post || 'product' !== get_post_type( $post ) ) {
+            return '<p>No hay alérgenos seleccionados para este producto.</p>';
+        }
+
         $selected_allergens_ingredients = get_post_meta( $post->ID, '_selected_allergens_ingredients', true );
         $selected_allergens_traces = get_post_meta( $post->ID, '_selected_allergens_traces', true );
 
-        $output = '<div class="allergen-display">';
+        // NUEVO: Obtener textos adicionales
+        $text_ingredients = get_post_meta( $post->ID, '_allergens_text_ingredients', true );
+        $text_traces = get_post_meta( $post->ID, '_allergens_text_traces', true );
 
-        // Mostrar ingredientes
+        $output = '<div class="allergen-container allergen-display">';
+
+        // Ingredientes
         if ( ! empty( $selected_allergens_ingredients ) && is_array( $selected_allergens_ingredients ) ) {
-            $output .= '<h4>Ingredientes:</h4>';
-            $output .= '<div class="allergen-ingredients">';
+            $output .= '<h4 style="background-color:#f0f0f0;border-radius:5px;padding:5px 10px;font-size:1.2em;font-weight:bold;">Ingredientes:</h4>';
+            $output .= '<div class="allergen-section allergen-ingredients">';
             foreach ( $selected_allergens_ingredients as $allergen_key ) {
                 if ( isset( $this->allergens[ $allergen_key ] ) ) {
                     $data    = $this->allergens[ $allergen_key ];
                     $img_src = plugin_dir_url( __FILE__ ) . 'img/' . $data['img'];
                     $output .= '<div class="allergen-item">';
-                        $output .= '<img src="' . esc_url( $img_src ) . '" alt="' . esc_attr( $data['label'] ) . '"  />';
-                        $output .= '<span class="allergen-tooltip">' . esc_html( $data['label'] ) . '</span>';
+                        $output .= '<img class="allergen-image" src="' . esc_url( $img_src ) . '" alt="' . esc_attr( $data['label'] ) . '"  />';
+                        $output .= '<span class="allergen-text allergen-tooltip">' . esc_html( $data['label'] ) . '</span>';
                     $output .= '</div>';
                 }
             }
             $output .= '</div>';
+            // Mostrar texto adicional debajo de ingredientes si existe
+            if ( ! empty( $text_ingredients ) ) {
+                $output .= '<div class="allergen-texto-adicional allergen-text-ingredients" style=" ">' . wpautop( esc_html( $text_ingredients ) ) . '</div>';
+            }
         }
 
-        // Mostrar trazas
+        // Trazas
         if ( ! empty( $selected_allergens_traces ) && is_array( $selected_allergens_traces ) ) {
-            $output .= '<h4>Trazas:</h4>';
-            $output .= '<div class="allergen-traces">';
+            $output .= '<h4 style="background-color:#f0f0f0;border-radius:5px;padding:5px 10px; font-size:1.2em;font-weight:bold;">Trazas:</h4>';
+            $output .= '<div class="allergen-section allergen-traces">';
             foreach ( $selected_allergens_traces as $allergen_key ) {
                 if ( isset( $this->allergens[ $allergen_key ] ) ) {
                     $data    = $this->allergens[ $allergen_key ];
                     $img_src = plugin_dir_url( __FILE__ ) . 'img/' . $data['img'];
                     $output .= '<div class="allergen-item">';
-                        $output .= '<img class="allergen-trace-icon" src="' . esc_url( $img_src ) . '" alt="' . esc_attr( $data['label'] ) . '"  />';
-                        $output .= '<span class="allergen-tooltip">' . esc_html( $data['label'] ) . '</span>';
+                        $output .= '<img class="allergen-image allergen-trace-icon" src="' . esc_url( $img_src ) . '" alt="' . esc_attr( $data['label'] ) . '"  />';
+                        $output .= '<span class="allergen-text allergen-tooltip">' . esc_html( $data['label'] ) . '</span>';
                     $output .= '</div>';
                 }
             }
             $output .= '</div>';
+            // Mostrar texto adicional debajo de trazas si existe
+            if ( ! empty( $text_traces ) ) {
+                $output .= '<div class="allergen-texto-adicional allergen-text-traces" style=" ">' . wpautop( esc_html( $text_traces ) ) . '</div>';
+            }
         }
 
         $output .= '</div>';
+
         return $output;
     }
 }
 
-// Inicializamos el plugin.
 new Woo_Allergen_Selector();
