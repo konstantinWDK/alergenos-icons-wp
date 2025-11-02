@@ -4,14 +4,10 @@
     flex-direction: column;
 }
 
-.allergen-section {
  
-    display: block;
-}
-
 .allergen-ingredients,
 .allergen-traces {
-  
+      margin-left: 10px;
     display: block;
 }
 
