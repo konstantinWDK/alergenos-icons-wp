@@ -243,7 +243,7 @@ class Woo_Allergen_Selector {
         if ( $has_ingredients || $has_text_ingredients ) {
             // Solo mostrar título si hay ingredientes y no está oculto
             if ( $has_ingredients && empty( $this->options['hide_ingredients_title'] ) ) {
-                $output .= '<h4 style="background-color:#f0f0f0;border-radius:5px;padding:5px 10px;font-size:0.6em;font-weight:bold;margin-bottom: 10px; margin-top:10px;">Ingredientes:</h4>';
+                $output .= '<h4 style="background-color:#f0f0f0;border-radius:5px;padding:5px 10px;font-size:0.6em;font-weight:bold;margin: 0px 0px;">Ingredientes:</h4>';
             }
             
             if ( $has_ingredients ) {
@@ -271,7 +271,7 @@ class Woo_Allergen_Selector {
         if ( $has_traces || $has_text_traces ) {
             // Solo mostrar título si hay trazas y no está oculto
             if ( $has_traces && empty( $this->options['hide_traces_title'] ) ) {
-                $output .= '<h4 style="background-color:#f0f0f0;border-radius:5px;padding:5px 10px; font-size:0.6em;font-weight:bold;margin-bottom: 10px;margin-top:10px;">Trazas:</h4>';
+                $output .= '<h4 style="background-color:#f0f0f0;border-radius:5px;padding:5px 10px; font-size:0.6em;font-weight:bold;margin: 0px 0px;">Trazas:</h4>';
             }
             
             if ( $has_traces ) {
